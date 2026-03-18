@@ -1,0 +1,109 @@
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+use egui_markdown::parse;
+
+fn generate_document(sections: usize) -> String {
+  let mut doc = String::new();
+  for i in 0..sections {
+    match i % 5 {
+      0 => {
+        doc.push_str(&format!("## Heading {i}\n\n"));
+        doc.push_str("Some **bold** text and *italic* text with `inline code`.\n\n");
+      }
+      1 => {
+        doc.push_str("```rust\nfn example() {\n    let x = 42;\n    println!(\"{x}\");\n}\n```\n\n");
+      }
+      2 => {
+        doc.push_str("- Item one\n- Item two\n  - Nested item\n- Item three\n\n");
+      }
+      3 => {
+        doc.push_str("| Col A | Col B | Col C |\n|-------|-------|-------|\n");
+        doc.push_str("| cell  | cell  | cell  |\n| cell  | cell  | cell  |\n\n");
+      }
+      4 => {
+        doc.push_str("> Blockquote with **bold** and a [link](https://example.com).\n\n");
+        doc.push_str("---\n\n");
+      }
+      _ => unreachable!(),
+    }
+  }
+  doc
+}
+
+fn bench_parse(c: &mut Criterion) {
+  let doc = generate_document(100);
+  c.bench_function("parse_100_sections", |b| {
+    b.iter(|| {
+      let md = parse(black_box(&doc));
+      black_box(&md.tokens);
+    });
+  });
+}
+
+fn bench_hash_text(c: &mut Criterion) {
+  use std::collections::hash_map::DefaultHasher;
+  use std::hash::{Hash, Hasher};
+
+  let doc = generate_document(100);
+
+  c.bench_function("hash_text_100_sections", |b| {
+    b.iter(|| {
+      let mut hasher = DefaultHasher::new();
+      black_box(&doc).hash(&mut hasher);
+      black_box(hasher.finish());
+    });
+  });
+}
+
+fn bench_hash_token_slice(c: &mut Criterion) {
+  use std::collections::hash_map::DefaultHasher;
+  use std::hash::{Hash, Hasher};
+
+  let doc = generate_document(100);
+  let md = parse(&doc);
+  let tokens = &md.tokens;
+
+  c.bench_function("hash_token_slice_100_sections", |b| {
+    b.iter(|| {
+      let mut hasher = DefaultHasher::new();
+      tokens.hash(&mut hasher);
+      black_box(hasher.finish());
+    });
+  });
+}
+
+fn bench_arc_clone(c: &mut Criterion) {
+  use std::sync::Arc;
+
+  let doc = generate_document(100);
+  let md = parse(&doc);
+  let tokens: Vec<egui_markdown::Token<'static>> = md
+    .tokens
+    .iter()
+    .map(|t| {
+      // Simple owned clone for benchmarking
+      match t {
+        egui_markdown::Token::Newline => egui_markdown::Token::Newline,
+        egui_markdown::Token::Text { text, style } => egui_markdown::Token::Text {
+          text: pulldown_cmark::CowStr::Boxed(text.to_string().into_boxed_str()),
+          style: style.clone(),
+        },
+        other => egui_markdown::Token::Text {
+          text: pulldown_cmark::CowStr::Boxed(other.text().to_string().into_boxed_str()),
+          style: Default::default(),
+        },
+      }
+    })
+    .collect();
+  let arc_tokens = Arc::new(tokens);
+
+  c.bench_function("arc_clone_tokens", |b| {
+    b.iter(|| {
+      let cloned = Arc::clone(black_box(&arc_tokens));
+      black_box(&cloned);
+    });
+  });
+}
+
+criterion_group!(benches, bench_parse, bench_hash_text, bench_hash_token_slice, bench_arc_clone);
+criterion_main!(benches);
