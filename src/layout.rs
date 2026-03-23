@@ -47,10 +47,11 @@ pub fn section_for_char(job: &LayoutJob, char_index: u32) -> Option<u32> {
 
 /// Apply inline code background and text color to a [`TextFormat`].
 #[inline]
+#[allow(clippy::useless_conversion)]
 pub fn apply_inline_code_bg(format: &mut TextFormat, dark_mode: bool, inline_style: &InlineCodeStyle) {
   format.color = inline_style.color(dark_mode);
   format.background = inline_style.background(dark_mode);
-  format.expand_bg = inline_style.expand_bg;
+  format.expand_bg = inline_style.expand_bg.into();
 }
 
 #[inline]
@@ -373,8 +374,9 @@ pub fn highlight_code(
           let byte_start = byte_offset;
           let byte_end = byte_offset + range.len();
           let fg = syn_style.foreground;
+          #[allow(clippy::useless_conversion)]
           job.sections.push(LayoutSection {
-            leading_space: 0.0,
+            leading_space: 0.0.into(),
             byte_range: byte_start..byte_end,
             format: TF {
               font_id: FontId::monospace(code_font_size),
