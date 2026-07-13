@@ -203,7 +203,7 @@ impl eframe::App for AdvancedApp {
     });
 
     if self.show_editor {
-      egui::Panel::left("editor").default_width(400.0).show_inside(ui, |ui| {
+      egui::Panel::left("editor").default_size(400.0).show_inside(ui, |ui| {
         ui.heading("Markdown Source");
         egui::ScrollArea::vertical().show(ui, |ui| {
           ui.add(egui::TextEdit::multiline(&mut self.markdown_input).desired_width(f32::INFINITY).code_editor());
@@ -212,7 +212,7 @@ impl eframe::App for AdvancedApp {
     }
 
     if self.show_style_editor {
-      egui::Panel::right("style_editor").default_width(280.0).show_inside(ui, |ui| {
+      egui::Panel::right("style_editor").default_size(280.0).show_inside(ui, |ui| {
         ui.heading("Style");
         ui.separator();
         egui::ScrollArea::vertical().show(ui, |ui| {

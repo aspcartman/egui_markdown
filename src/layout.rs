@@ -1,6 +1,6 @@
 //! Layout job construction from parsed markdown token streams.
 
-use egui::{text::LayoutJob, Align, Color32, FontFamily, FontId, Stroke, TextFormat, TextWrapMode, Ui};
+use egui::{text::{ByteIndex, LayoutJob}, Align, Color32, FontFamily, FontId, Stroke, TextFormat, TextWrapMode, Ui};
 
 use crate::link::LinkHandler;
 use crate::style::{InlineCodeStyle, MarkdownStyle};
@@ -35,7 +35,7 @@ pub struct LayoutResult {
 pub fn section_for_char(job: &LayoutJob, char_index: u32) -> Option<u32> {
   let mut offset = 0u32;
   for (section_idx, section) in job.sections.iter().enumerate() {
-    let section_text = &job.text[section.byte_range.clone()];
+    let section_text = &job.text[section.byte_range.start.0..section.byte_range.end.0];
     let char_count = section_text.chars().count() as u32;
     if char_index < offset + char_count {
       return Some(section_idx as u32);
@@ -177,7 +177,7 @@ pub fn build_layout(
 
           let start_char = job.text.chars().count();
           for section in highlighted_job.sections {
-            let section_text = &highlighted_job.text[section.byte_range.clone()];
+            let section_text = &highlighted_job.text[section.byte_range.start.0..section.byte_range.end.0];
             job.append(section_text, 0.0, section.format);
             section_to_token.push(token_index);
           }
@@ -347,7 +347,7 @@ pub fn highlight_code(
   static THEME_SET: LazyLock<syntect::highlighting::ThemeSet> =
     LazyLock::new(syntect::highlighting::ThemeSet::load_defaults);
 
-  let style = &*ui.ctx().style();
+  let style = ui.style();
   let ss = &*SYNTAX_SET;
   let syn_theme = code_theme.unwrap_or_else(|| {
     if style.visuals.dark_mode {
@@ -377,7 +377,7 @@ pub fn highlight_code(
           #[allow(clippy::useless_conversion)]
           job.sections.push(LayoutSection {
             leading_space: 0.0.into(),
-            byte_range: byte_start..byte_end,
+            byte_range: ByteIndex(byte_start)..ByteIndex(byte_end),
             format: TF {
               font_id: FontId::monospace(code_font_size),
               color: Color32::from_rgb(fg.r, fg.g, fg.b),

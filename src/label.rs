@@ -832,13 +832,11 @@ impl<'a> MarkdownLabel<'a> {
         // Find the char range for this section.
         let mut sec_start_char = 0u32;
         for s in &galley.job.sections[..sec_idx] {
-          sec_start_char += galley.job.text[s.byte_range.clone()].chars().count() as u32;
+          sec_start_char += galley.job.text[s.byte_range.start.0..s.byte_range.end.0].chars().count() as u32;
         }
-        let sec_char_count = galley.job.sections[sec_idx]
-          .byte_range
-          .clone()
-          .len()
-          .min(galley.job.text[galley.job.sections[sec_idx].byte_range.clone()].chars().count());
+        let byte_range = galley.job.sections[sec_idx].byte_range.clone();
+        let sec_char_count = (byte_range.end.0 - byte_range.start.0)
+          .min(galley.job.text[byte_range.start.0..byte_range.end.0].chars().count());
         let sec_end_char = sec_start_char + sec_char_count as u32;
         if sec_end_char <= sec_start_char {
           continue;
@@ -1025,7 +1023,7 @@ pub fn cursor_from_pos(galley: &Galley, pos: Pos2) -> Option<u32> {
         return Some(index + column as u32);
       }
     }
-    index += row.char_count_including_newline() as u32;
+    index += row.char_count_including_newline().0 as u32;
   }
   None
 }
@@ -1034,10 +1032,10 @@ pub fn cursor_from_pos(galley: &Galley, pos: Pos2) -> Option<u32> {
 pub fn glyph_at_index(galley: &Galley, index: u32) -> Option<(&Glyph, u32)> {
   let mut offset = 0;
   for (row_index, row) in galley.rows.iter().enumerate() {
-    if index < offset + row.char_count_including_newline() as u32 {
+    if index < offset + row.char_count_including_newline().0 as u32 {
       return row.glyphs.get((index - offset) as usize).map(|glyph| (glyph, row_index as u32));
     }
-    offset += row.char_count_including_newline() as u32;
+    offset += row.char_count_including_newline().0 as u32;
   }
   None
 }
