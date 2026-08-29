@@ -13,16 +13,17 @@ keywords = ["egui", "markdown", "gui", "commonmark"]
 include = ["**/*.rs", "Cargo.toml", "LICENSE-MIT", "LICENSE-APACHE", "README.md"]
 
 [dependencies]
-egui = { version = "0.36.1", default-features = false }
-epaint = { version = "0.36.1", default-features = false }
-egui_extras = { version = "0.36.1", default-features = false }
+# Keep the complete egui family on the Transform3D revision.
+egui = { git = "https://github.com/aspcartman/egui.git", rev = "d83ce134c", default-features = false }
+epaint = { git = "https://github.com/aspcartman/egui.git", rev = "d83ce134c", default-features = false }
+egui_extras = { git = "https://github.com/aspcartman/egui.git", rev = "d83ce134c", default-features = false }
 pulldown-cmark = "0.13.0"
 syntect = { version = "5", optional = true, default-features = false, features = ["default-syntaxes", "default-themes", "regex-fancy"] }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
-eframe = { version = "0.36.1", default-features = true, features = ["default_fonts", "glow"] }
-egui_extras = { version = "0.36.1", features = ["syntect"] }
+eframe = { git = "https://github.com/aspcartman/egui.git", rev = "d83ce134c", default-features = true, features = ["default_fonts", "glow"] }
+egui_extras = { git = "https://github.com/aspcartman/egui.git", rev = "d83ce134c", features = ["syntect"] }
 env_logger = "0.11"
 
 [features]
