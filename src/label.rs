@@ -785,11 +785,12 @@ impl<'a> MarkdownLabel<'a> {
     let transformed_pointer_pos = ui.input(|i| {
       i.pointer.latest_pos().map(|raw_pos| {
         if let Some(transform) = current_transform {
-          transform.inverse() * raw_pos
+          // The active UI transform may be projective, so invert its UI-plane homography.
+          transform.unproject_pos2(raw_pos)
         } else {
-          raw_pos
+          Some(raw_pos)
         }
-      })
+      }).flatten()
     });
 
     let pos_in_galley = transformed_pointer_pos.map(|pos| pos - rect.min.to_vec2())?;
